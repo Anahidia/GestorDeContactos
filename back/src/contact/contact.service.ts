@@ -26,6 +26,16 @@ export class ContactService {
         return this.contactRepository.findContactById(id);
     }
     
+    async findRecentContactsService(limit: number){
+        return this.contactRepository.findRecentContacts(limit);
+    }
+    
+  async findContactByNameService(name: string) {
+
+    return await this.contactRepository.findContactByName(name);
+  }
+      
+    
     async removeContactService(id: string): Promise<void> {
         await this.contactRepository.removeContact(id);
     }

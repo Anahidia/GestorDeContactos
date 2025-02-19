@@ -11,5 +11,6 @@ export default registerAs('typeorm', () => ({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   entities: [Contact, Message],
-  synchronize: true, // Solo para desarrollo
+  synchronize: true, 
+  dropSchema: true,
 }));
