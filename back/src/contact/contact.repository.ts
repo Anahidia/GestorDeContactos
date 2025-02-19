@@ -7,6 +7,9 @@ import { CreateMultipleContactsDto } from "./dto/CreateMultipleContactsDto";
 
 @Injectable()
 export class ContactRepository {
+    createQueryBuilder(arg0: string) {
+        throw new Error('Method not implemented.');
+    }
     constructor(
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
@@ -43,6 +46,7 @@ export class ContactRepository {
         };
       }
       
+    
       async findContactById(id: string): Promise<Contact> {
         const contact = await this.contactRepository.findOne({ where: { id } });
         if (!contact) {
@@ -51,6 +55,25 @@ export class ContactRepository {
         return contact;
       }
 
+      async findRecentContacts(limit: number) {
+        return this.contactRepository.find({
+          order: {
+            created_at: 'DESC', 
+            name: 'ASC', 
+          },
+          take: limit,
+        });
+      }
+
+      async findContactByName(name: string) {
+        return this.contactRepository.findOne({
+          where: {
+            name: name,
+          },
+        });
+      }
+      
+    
       async removeContact(id: string): Promise<void> {
         const result = await this.contactRepository.delete(id);
         if (result.affected === 0) {

@@ -31,7 +31,16 @@ export class ContactController {
     findOne(@Param('id') id: string) {
       return this.contactService.findContactByIdService(id);
     }
-    
+
+    @Get('/search/recent')
+    recent(@Query('limit') limit: number = 10) {
+      return this.contactService.findRecentContactsService(limit);
+    }
+    @Get('name/search/')
+       async findByName(@Query('name') name: string) {
+         return this.contactService.findContactByNameService(name);
+       }
+       
     @Delete(':id')
     remove(@Param('id') id: string) {
       return this.contactService.removeContactService(id);
