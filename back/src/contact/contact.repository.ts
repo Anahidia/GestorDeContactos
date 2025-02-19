@@ -7,9 +7,8 @@ import { CreateMultipleContactsDto } from "./dto/CreateMultipleContactsDto";
 
 @Injectable()
 export class ContactRepository {
-    createQueryBuilder(arg0: string) {
-        throw new Error('Method not implemented.');
-    }
+
+    
     constructor(
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
