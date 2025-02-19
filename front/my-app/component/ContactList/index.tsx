@@ -163,7 +163,7 @@ export default function ContactList({
                   </TableCell>
                   <TableCell>{contact.name}</TableCell>
                   <TableCell>{contact.number}</TableCell>
-                  <TableCell>{new Date(contact.created_at).toLocaleDateString()}</TableCell>
+                 
                 </TableRow>
               ))}
             </TableBody>

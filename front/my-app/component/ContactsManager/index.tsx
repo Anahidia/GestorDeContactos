@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { FileSpreadsheet, Plus } from "lucide-react"
+import { FileSpreadsheet, Plus, Upload } from "lucide-react"
 import * as XLSX from "xlsx"
 import type { Contact } from "@/types"
 
@@ -16,8 +16,9 @@ interface ContactsManagerProps {
 }
 
 export default function ContactsManager({ contacts, setContacts }: ContactsManagerProps) {
-  const [newContact, setNewContact] = useState({ name: "", phone: "" })
+  const [newContact, setNewContact] = useState({ name: "", number: "" })
   const [isLoading, setIsLoading] = useState(false)
+  const [excelContacts, setExcelContacts] = useState<Contact[]>([])
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -33,20 +34,52 @@ export default function ContactsManager({ contacts, setContacts }: ContactsManag
         const newContacts: Contact[] = json.map((row: any) => ({
           id: Math.random().toString(36).substr(2, 9),
           name: row.Nombre || "",
-          phone: row.Telefono?.toString() || "",
+          number: row.Telefono?.toString() || "",
           selected: false,
         }))
-        setContacts((prevContacts) => [...prevContacts, ...newContacts])
+        setExcelContacts(newContacts)
         setIsLoading(false)
       }
       reader.readAsArrayBuffer(file)
     }
   }
 
+  const sendExcelContacts = async () => {
+    if (excelContacts.length === 0) {
+      alert("No hay contactos para enviar")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch("http://localhost:3002/contact/multiple", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(excelContacts),
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al enviar los contactos")
+      }
+
+      const newContacts = await response.json()
+      setContacts((prevContacts) => [...prevContacts, ...newContacts])
+      setExcelContacts([])
+      alert("Contactos enviados exitosamente")
+    } catch (error) {
+      console.error("Error:", error)
+      alert("Error al enviar los contactos")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const addContact = () => {
-    if (newContact.name && newContact.phone) {
+    if (newContact.name && newContact.number) {
       setContacts([...contacts, { ...newContact, id: Math.random().toString(36).substr(2, 9), selected: false }])
-      setNewContact({ name: "", phone: "" })
+      setNewContact({ name: "", number: "" })
     }
   }
 
@@ -78,6 +111,17 @@ export default function ContactsManager({ contacts, setContacts }: ContactsManag
               {isLoading && <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-700"></div>}
             </div>
           </div>
+          {excelContacts.length > 0 && (
+            <div>
+              <Button
+                onClick={sendExcelContacts}
+                className="bg-blue-600 hover:bg-blue-700 transition-colors duration-200 shadow-md"
+                disabled={isLoading}
+              >
+                <Upload className="mr-2 h-4 w-4" /> Enviar contactos de Excel
+              </Button>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-2">
             <Input
               placeholder="Nombre"
@@ -86,8 +130,8 @@ export default function ContactsManager({ contacts, setContacts }: ContactsManag
             />
             <Input
               placeholder="Teléfono"
-              value={newContact.phone}
-              onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+              value={newContact.number}
+              onChange={(e) => setNewContact({ ...newContact, number: e.target.value })}
             />
             <Button
               onClick={addContact}

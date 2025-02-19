@@ -11,11 +11,12 @@ export interface allMesagge {
 }
 
 export interface Contact {
-    id: string
-    name: string
-    phone: string
-    selected: boolean
-  }
+  id: string
+  name: string
+  number: string
+  selected?: boolean
+}
+
   
   export interface PresetMessage {
     text: string
