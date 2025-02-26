@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { Contact } from "src/entitys/contact.entity";
 import { Repository } from "typeorm";
 import { CreateContactDto } from "./dto/creteContactDto";
 import { CreateMultipleContactsDto } from "./dto/CreateMultipleContactsDto";
+import { DataSource } from 'typeorm';
+import * as contactData from "../utils/moked.contacts.json"  
+
 
 @Injectable()
 export class ContactRepository {
@@ -12,8 +15,30 @@ export class ContactRepository {
     constructor(
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
+    @InjectDataSource() 
+    private readonly dataSource: DataSource
     ) {}
+    
 
+    async seederContact() {
+      // Preparamos los datos para insertarlos
+      const contactsToInsert = contactData?.map((element) => ({
+        name: element.name,
+        number: String(element.number)
+      }));
+  
+      // Realizamos la inserción en lotes para mejorar el rendimiento
+      await this.contactRepository
+        .createQueryBuilder()
+        .insert()
+        .into(Contact)
+        .values(contactsToInsert)
+        .orIgnore()  // Evita insertar contactos duplicados si ya existen
+        .execute();
+  
+      return 'Contactos agregados exitosamente';
+    
+    }
     async createContact(createContactDto: CreateContactDto): Promise<Contact> {
         const contact = this.contactRepository.create(createContactDto);
         return await this.contactRepository.save(contact);

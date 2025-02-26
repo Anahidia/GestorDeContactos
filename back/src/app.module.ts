@@ -6,6 +6,7 @@ import { MensajeModule } from './mensaje/mensaje.module';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import typeorm from './config/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SeedersModule } from './seeders/seeders.module';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         return options;
       },
     }),
-    ContactModule, MensajeModule],
+    ContactModule, MensajeModule, SeedersModule],
   controllers: [AppController],
   providers: [AppService],
 })
