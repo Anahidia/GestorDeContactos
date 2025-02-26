@@ -1,64 +1,69 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useRef, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Plus, Smile, ImageIcon, Trash } from "lucide-react"
-import EmojiPicker from "emoji-picker-react"
-import type { PresetMessage } from "@/types"
+import { useState, useRef, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Smile, ImageIcon, Trash } from "lucide-react";
+import EmojiPicker from "emoji-picker-react";
+import toast from "react-hot-toast";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import type { PresetMessage } from "@/types";
 
 interface PresetMessagesManagerProps {
-  presetMessages: PresetMessage[]
-  setPresetMessages: React.Dispatch<React.SetStateAction<PresetMessage[]>>
+  presetMessages: PresetMessage[];
+  setPresetMessages: React.Dispatch<React.SetStateAction<PresetMessage[]>>;
 }
 
 export default function PresetMessagesManager({ presetMessages, setPresetMessages }: PresetMessagesManagerProps) {
-  const [newPresetMessage, setNewPresetMessage] = useState<PresetMessage>({ text: "" })
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-  const emojiPickerRef = useRef<HTMLDivElement>(null)
+  const [newPresetMessage, setNewPresetMessage] = useState<PresetMessage>({ case: "", text: "", image: "" });
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
-        setShowEmojiPicker(false)
+        setShowEmojiPicker(false);
       }
     }
-
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const addPresetMessage = async () => {
+    if (!newPresetMessage.case.trim() || !newPresetMessage.text.trim()) {
+      toast.error("Por favor, completa todos los campos antes de agregar.");
+      return;
     }
-  }, [])
-
-  const addPresetMessage = () => {
-    if (newPresetMessage.text.trim()) {
-      setPresetMessages([...presetMessages, newPresetMessage])
-      setNewPresetMessage({ text: "" })
-    }
-  }
-
-  const removePresetMessage = (index: number) => {
-    setPresetMessages(presetMessages.filter((_, i) => i !== index))
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setNewPresetMessage({ ...newPresetMessage, image: e.target?.result as string })
+    toast.promise(
+      fetch("http://localhost:3001/mensaje", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPresetMessage),
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error("Error al guardar el mensaje");
+          return res.json();
+        })
+        .then((data) => {
+          setPresetMessages([...presetMessages, data]);
+          setNewPresetMessage({ case: "", text: "", image: ""  });
+        }),
+      {
+        loading: "Guardando mensaje...",
+        success: "Mensaje creado exitosamente!",
+        error: "Hubo un error al crear el mensaje.",
       }
-      reader.readAsDataURL(file)
-    }
-  }
+    );
+  };
 
-  const onEmojiClick = (emojiObject: any) => {
-    setNewPresetMessage({ ...newPresetMessage, text: newPresetMessage.text + emojiObject.emoji })
-    setShowEmojiPicker(false)
-  }
+  const confirmAndAddPresetMessage = () => {
+    setShowConfirmDialog(true);
+  };
 
   return (
     <Card className="mb-6 shadow-lg">
@@ -67,84 +72,48 @@ export default function PresetMessagesManager({ presetMessages, setPresetMessage
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex space-x-2">
-            <div className="flex-1 space-y-2">
-              <div className="flex space-x-2">
-                <Textarea
-                  placeholder="Nuevo mensaje pre-armado"
-                  value={newPresetMessage.text}
-                  onChange={(e) => setNewPresetMessage({ ...newPresetMessage, text: e.target.value })}
-                />
-                <Button onClick={() => setShowEmojiPicker(!showEmojiPicker)} variant="outline">
-                  <Smile className="h-4 w-4" />
-                </Button>
-              </div>
-              {showEmojiPicker && (
-                <div ref={emojiPickerRef} className="absolute z-10">
-                  <EmojiPicker onEmojiClick={onEmojiClick} />
-                </div>
-              )}
-              <div className="flex space-x-2">
-                <div className="relative flex-1">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-                  />
-                  <div className="bg-white border rounded px-4 py-2 flex items-center justify-between">
-                    <span className="text-gray-500">Seleccionar imagen</span>
-                    <ImageIcon className="h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
-                <Button
-                  onClick={addPresetMessage}
-                  className="bg-green-600 hover:bg-green-700 transition-colors duration-200 shadow-md"
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Agregar
-                </Button>
-              </div>
+          <div className="flex flex-col space-y-2">
+            <Input
+              placeholder="Título del mensaje"
+              value={newPresetMessage.case}
+              onChange={(e) => setNewPresetMessage({ ...newPresetMessage, case: e.target.value })}
+            />
+            <div className="flex space-x-2">
+              <Textarea
+                placeholder="Nuevo mensaje pre-armado"
+                value={newPresetMessage.text}
+                onChange={(e) => setNewPresetMessage({ ...newPresetMessage, text: e.target.value })}
+              />
+              <Button onClick={() => setShowEmojiPicker(!showEmojiPicker)} variant="outline">
+                <Smile className="h-4 w-4" />
+              </Button>
             </div>
-            {newPresetMessage.image && (
-              <div className="w-24 h-24 relative">
-                <img
-                  src={newPresetMessage.image || "/placeholder.svg"}
-                  alt="Preview"
-                  className="w-full h-full object-cover rounded"
-                />
+            {showEmojiPicker && (
+              <div ref={emojiPickerRef} className="absolute z-10">
+                <EmojiPicker onEmojiClick={(emojiObject) => setNewPresetMessage({ ...newPresetMessage, text: newPresetMessage.text + emojiObject.emoji })} />
               </div>
             )}
+            <div className="flex space-x-2">
+              <Button onClick={confirmAndAddPresetMessage} className="bg-green-600 hover:bg-green-700 transition-colors duration-200 shadow-md">
+                <Plus className="mr-2 h-4 w-4" /> Agregar
+              </Button>
+            </div>
           </div>
-          <ul className="space-y-2">
-            {presetMessages.map((message, index) => (
-              <li
-                key={index}
-                className="flex items-center justify-between p-3 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
-              >
-                <div className="flex items-center space-x-3">
-                  {message.image && (
-                    <img
-                      src={message.image || "/placeholder.svg"}
-                      alt="Message image"
-                      className="w-12 h-12 object-cover rounded-full border-2 border-green-200"
-                    />
-                  )}
-                  <span className="text-gray-700">{message.text}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removePresetMessage(index)}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-100"
-                >
-                  <Trash className="h-5 w-5" />
-                </Button>
-              </li>
-            ))}
-          </ul>
         </div>
       </CardContent>
-    </Card>
-  )
-}
 
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>Este mensaje será guardado y no podrá ser editado después.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel  onClick={() => setShowConfirmDialog(false) }>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-green-500 hover:bg-green-600 transition-colors duration-200 shadow-md " onClick={() => { addPresetMessage(); setShowConfirmDialog(false); }}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
