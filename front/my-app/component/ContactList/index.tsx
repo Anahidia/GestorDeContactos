@@ -1,24 +1,46 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Send, PhoneIcon as WhatsappIcon, ChevronLeft, ChevronRight } from "lucide-react"
-import type { Contact, PresetMessage, MessageCounts, MessageLimits, ContactsResponse } from "@/types"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Send,
+  PhoneIcon as WhatsappIcon,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import type {
+  Contact,
+  PresetMessage,
+  MessageCounts,
+  MessageLimits,
+  ContactsResponse,
+} from "@/types";
 
 interface ContactListProps {
-  presetMessages: PresetMessage[]
-  messageCounts: MessageCounts
-  setMessageCounts: React.Dispatch<React.SetStateAction<MessageCounts>>
-  messageLimits: MessageLimits
+  presetMessages: PresetMessage[]; // Array de mensajes predefinidos
+  messageCounts: MessageCounts;
+  setMessageCounts: React.Dispatch<React.SetStateAction<MessageCounts>>;
+  messageLimits: MessageLimits;
 }
 
 export default function ContactList({
@@ -27,89 +49,146 @@ export default function ContactList({
   setMessageCounts,
   messageLimits,
 }: ContactListProps) {
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [filter, setFilter] = useState("")
-  const [alertMessage, setAlertMessage] = useState<string | null>(null)
-  const [selectedMessage, setSelectedMessage] = useState<PresetMessage>({ text: "" })
-  const [showMessageDialog, setShowMessageDialog] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [selectAll, setSelectAll] = useState(false)
-  const [selectedCount, setSelectedCount] = useState(0)
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [filter, setFilter] = useState("");
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  // Modifica la definición del estado para los mensajes predefinidos
+  const [selectedMessage, setSelectedMessage] = useState<PresetMessage>({
+    text: "",
+    case: "",
+    id: "",
+  });
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectAll, setSelectAll] = useState(false);
+  const [selectedCount, setSelectedCount] = useState(0);
+  const [presetMessagesState, setPresetMessagesState] = useState<
+    PresetMessage[]
+  >([]);
 
   useEffect(() => {
-    fetchContacts(currentPage)
-  }, [currentPage])
+    fetchContacts(currentPage);
+  }, [currentPage]);
+
+  // Obtener los mensajes desde el backend
+  useEffect(() => {
+    fetchPresetMessages(); // Llamamos a la API cuando el componente se monta
+  }, []);
+
+  // Actualiza la función fetchPresetMessages
+  const fetchPresetMessages = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/mensaje");
+      const data = await response.json();
+      console.log("Mensajes cargados:", data); // Para depuración
+      setPresetMessagesState(data); // Almacena los mensajes en el estado
+    } catch (error) {
+      console.error("Error al obtener los mensajes:", error);
+      setAlertMessage("Error al cargar los mensajes predefinidos.");
+    }
+  };
+
+  // Asegúrate de que esta función se llame en el useEffect
+  useEffect(() => {
+    fetchPresetMessages();
+  }, []);
+
+  useEffect(() => {
+    fetchPresetMessages(); // Llamamos a la API cuando el componente se monta
+  }, []);
 
   const fetchContacts = async (page: number) => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3002/contact?page=${page}`)
-      const data: ContactsResponse = await response.json()
-      setContacts(data.contacts.map((contact) => ({ ...contact, selected: false })))
-      setTotalPages(data.totalPages)
-      setIsLoading(false)
+      const response = await fetch(
+        `http://localhost:3001/contact?page=${page}`
+      );
+      const data: ContactsResponse = await response.json();
+      setContacts(
+        data.contacts.map((contact) => ({ ...contact, selected: false }))
+      );
+      setTotalPages(data.totalPages);
+      setIsLoading(false);
     } catch (error) {
-      console.error("Error fetching contacts:", error)
-      setAlertMessage("Error al cargar los contactos. Por favor, intente de nuevo.")
-      setIsLoading(false)
+      console.error("Error fetching contacts:", error);
+      setAlertMessage(
+        "Error al cargar los contactos. Por favor, intente de nuevo."
+      );
+      setIsLoading(false);
     }
-  }
+  };
 
   const toggleSelectAll = () => {
-    const newSelectAll = !selectAll
-    setSelectAll(newSelectAll)
-    setContacts(contacts.map((contact) => ({ ...contact, selected: newSelectAll })))
-    setSelectedCount(newSelectAll ? contacts.length : 0)
-  }
+    const newSelectAll = !selectAll;
+    setSelectAll(newSelectAll);
+    setContacts(
+      contacts.map((contact) => ({ ...contact, selected: newSelectAll }))
+    );
+    setSelectedCount(newSelectAll ? contacts.length : 0);
+  };
 
   const toggleSelect = (id: string) => {
-    setContacts(contacts.map((contact) => (contact.id === id ? { ...contact, selected: !contact.selected } : contact)))
-    setSelectedCount((prev) => (contacts.find((c) => c.id === id)?.selected ? prev - 1 : prev + 1))
-  }
+    setContacts(
+      contacts.map((contact) =>
+        contact.id === id
+          ? { ...contact, selected: !contact.selected }
+          : contact
+      )
+    );
+    setSelectedCount((prev) =>
+      contacts.find((c) => c.id === id)?.selected ? prev - 1 : prev + 1
+    );
+  };
 
   const filteredContacts = contacts.filter(
-    (contact) => contact.name.toLowerCase().includes(filter.toLowerCase()) || contact.number.includes(filter),
-  )
+    (contact) =>
+      contact.name.toLowerCase().includes(filter.toLowerCase()) ||
+      contact.number.includes(filter)
+  );
 
   const sendWhatsAppMessage = (phone: string, message: PresetMessage) => {
     if (messageCounts.daily >= messageLimits.daily) {
-      setAlertMessage(`Has alcanzado el límite diario de ${messageLimits.daily} mensajes.`)
-      return
+      setAlertMessage(
+        `Has alcanzado el límite diario de ${messageLimits.daily} mensajes.`
+      );
+      return;
     }
     if (messageCounts.monthly >= messageLimits.monthly) {
-      setAlertMessage(`Has alcanzado el límite mensual de ${messageLimits.monthly} mensajes.`)
-      return
+      setAlertMessage(
+        `Has alcanzado el límite mensual de ${messageLimits.monthly} mensajes.`
+      );
+      return;
     }
 
-    const encodedMessage = encodeURIComponent(message.text)
-    let url = `https://wa.me/${phone}?text=${encodedMessage}`
+    const encodedMessage = encodeURIComponent(message.text);
+    let url = `https://wa.me/${phone}?text=${encodedMessage}`;
     if (message.image) {
-      url += `&image=${encodeURIComponent(message.image)}`
+      url += `&image=${encodeURIComponent(message.image)}`;
     }
-    window.open(url, "_blank")
+    window.open(url, "_blank");
 
     setMessageCounts((prev) => ({
       daily: prev.daily + 1,
       monthly: prev.monthly + 1,
-    }))
-  }
+    }));
+  };
 
   const sendToSelected = () => {
-    setShowMessageDialog(true)
-  }
+    setShowMessageDialog(true);
+  };
 
   const confirmSendToSelected = () => {
-    setIsLoading(true)
-    const selectedContacts = contacts.filter((contact) => contact.selected)
+    setIsLoading(true);
+    const selectedContacts = contacts.filter((contact) => contact.selected);
     selectedContacts.forEach((contact) => {
-      sendWhatsAppMessage(contact.number, selectedMessage)
-    })
-    setShowMessageDialog(false)
-    setSelectedMessage({ text: "" })
-    setIsLoading(false)
-  }
+      sendWhatsAppMessage(contact.number, selectedMessage);
+    });
+    setShowMessageDialog(false);
+    setSelectedMessage({ text: "", case: "", id: "" });
+    setIsLoading(false);
+  };
 
   return (
     <Card className="mb-6 shadow-lg">
@@ -138,7 +217,8 @@ export default function ContactList({
             Mensajes enviados hoy: {messageCounts.daily}/{messageLimits.daily}
           </p>
           <p>
-            Mensajes enviados este mes: {messageCounts.monthly}/{messageLimits.monthly}
+            Mensajes enviados este mes: {messageCounts.monthly}/
+            {messageLimits.monthly}
           </p>
           <p>Contactos seleccionados: {selectedCount}</p>
         </div>
@@ -148,7 +228,10 @@ export default function ContactList({
             <TableHeader>
               <TableRow className="bg-green-100">
                 <TableHead className="w-[50px]">
-                  <Checkbox checked={selectAll} onCheckedChange={toggleSelectAll} />
+                  <Checkbox
+                    checked={selectAll}
+                    onCheckedChange={toggleSelectAll}
+                  />
                 </TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Teléfono</TableHead>
@@ -157,13 +240,18 @@ export default function ContactList({
             </TableHeader>
             <TableBody>
               {filteredContacts.map((contact) => (
-                <TableRow key={contact.id} className="hover:bg-gray-50 transition-colors duration-150">
+                <TableRow
+                  key={contact.id}
+                  className="hover:bg-gray-50 transition-colors duration-150"
+                >
                   <TableCell>
-                    <Checkbox checked={contact.selected} onCheckedChange={() => toggleSelect(contact.id)} />
+                    <Checkbox
+                      checked={contact.selected}
+                      onCheckedChange={() => toggleSelect(contact.id)}
+                    />
                   </TableCell>
                   <TableCell>{contact.name}</TableCell>
                   <TableCell>{contact.number}</TableCell>
-                 
                 </TableRow>
               ))}
             </TableBody>
@@ -182,7 +270,9 @@ export default function ContactList({
             Página {currentPage} de {totalPages}
           </span>
           <Button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
             disabled={currentPage === totalPages}
             variant="outline"
           >
@@ -196,53 +286,73 @@ export default function ContactList({
             className="bg-green-600 hover:bg-green-700 transition-colors duration-200 shadow-md"
             disabled={selectedCount === 0}
           >
-            <Send className="mr-2 h-4 w-4" /> Enviar a seleccionados ({selectedCount})
+            <Send className="mr-2 h-4 w-4" /> Enviar a seleccionados (
+            {selectedCount})
           </Button>
         </div>
 
+        {/* Modifica el contenido del Dialog para usar presetMessages */}
         <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px] bg-white rounded-lg shadow-xl">
             <DialogHeader>
-              <DialogTitle>Seleccionar o crear mensaje</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                Seleccionar mensaje
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <Label>Seleccionar mensaje pre-armado:</Label>
-              <select
-                className="w-full p-2 border rounded"
-                onChange={(e) => setSelectedMessage(presetMessages[Number.parseInt(e.target.value)])}
-                value={presetMessages.findIndex((m) => m.text === selectedMessage.text)}
-              >
-                <option value={-1}>Seleccionar mensaje...</option>
-                {presetMessages.map((message, index) => (
-                  <option key={index} value={index}>
-                    {message.text}
-                  </option>
-                ))}
-              </select>
-              <Label>O crear un nuevo mensaje:</Label>
-              <Textarea
-                value={selectedMessage.text}
-                onChange={(e) => setSelectedMessage({ ...selectedMessage, text: e.target.value })}
-                placeholder="Escribe tu mensaje aquí..."
-              />
-              {selectedMessage.image && (
-                <div className="w-24 h-24 relative">
-                  <img
-                    src={selectedMessage.image || "/placeholder.svg"}
-                    alt="Selected message image"
-                    className="w-full h-full object-cover rounded"
-                  />
+            <div className="mt-4 space-y-6">
+              <div>
+                <Label
+                  htmlFor="message-select"
+                  className="block text-sm font-sans text-gray-700 mb-2"
+                >
+                  Seleccionar mensaje pre-armado:
+                </Label>
+                <select
+                  id="message-select"
+                  className="w-full p-2 border block text-sm font-sans text-gray-700 mb-2 border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const selected = presetMessagesState.find(
+                      (message) => message.id === selectedId
+                    );
+                    if (selected) {
+                      setSelectedMessage(selected);
+                    } else {
+                      setSelectedMessage({ text: "", case: "", id: "" });
+                    }
+                  }}
+                  value={selectedMessage.id || ""}
+                >
+                  <option value="">Seleccionar mensaje...</option>
+                  {presetMessagesState.map((message) => (
+                    <option key={message.id} value={message.id}>
+                      {message.case}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedMessage.case && (
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <p className="text-sm text-gray-700">
+                    {selectedMessage.text}
+                  </p>
                 </div>
               )}
+
               <Button
-                onClick={confirmSendToSelected}
-                className="w-full bg-green-600 hover:bg-green-700 transition-colors duration-200 shadow-md"
+                onClick={() => {
+                  confirmSendToSelected();
+                  console.log("Mensaje seleccionado:", selectedMessage.text);
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 transition-colors duration-200 shadow-md text-white font-semibold py-2 px-4 rounded-md"
               >
                 {isLoading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
                 ) : (
                   <>
-                    <WhatsappIcon className="mr-2 h-4 w-4" /> Enviar Mensaje
+                    <WhatsappIcon className="mr-2 h-5 w-5 inline" /> Enviar
+                    Mensaje
                   </>
                 )}
               </Button>
@@ -251,6 +361,5 @@ export default function ContactList({
         </Dialog>
       </CardContent>
     </Card>
-  )
+  );
 }
-
