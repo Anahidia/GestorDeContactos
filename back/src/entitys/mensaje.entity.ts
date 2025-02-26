@@ -6,7 +6,7 @@ export class Message {
   id: string;
 
   @Column()
-  asunto: string;
+  case: string;
 
   @Column()
   text: string;
