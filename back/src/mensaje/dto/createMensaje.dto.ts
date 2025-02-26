@@ -2,7 +2,7 @@ import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateMessageDto {
   @IsNotEmpty()
-  asunto: string;
+  case: string;
 
   @IsNotEmpty()
   text: string;

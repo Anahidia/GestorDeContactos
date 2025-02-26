@@ -28,7 +28,7 @@ async getMessageById(id: string) {
 }
 
 async getMessageByAsunto(asunto: string) {
-    return await this.mensajeRepository.find({where: {asunto}});
+    return await this.mensajeRepository.find({where: {case: asunto}});
 }
 
 async updateMessage(id: string, message: Message) {
